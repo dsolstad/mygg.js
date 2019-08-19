@@ -6,7 +6,7 @@ You should run mygg.js on a Internet-facing server with a domain pointing to it.
 If you do not have valid certificate to the domain, then you can use Let's Encrypt:
 ```
 $ sudo add-apt-repository ppa:certbot/certbot
-$ sudo apt-get update
+$ sudo apt  update
 $ sudo apt install certbot
 $ sudo certbot certonly --standalone --preferred-challenges http -d example.com
 ```
