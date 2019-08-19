@@ -11,7 +11,8 @@ $ sudo apt install certbot
 $ sudo certbot certonly --standalone --preferred-challenges http -d example.com
 ```
 The certificate and key files should now be located in /etc/letsencrypt/live/example.com.  
-Configure mygg.js accordingly in the top section of the file and make sure it points to the right files.    
+Configure mygg.js accordingly in the top section of the file and make sure it points to the right files.  
+  
 Start mygg.js:
 ```
 $ node mygg.js
