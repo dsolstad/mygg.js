@@ -5,16 +5,19 @@ Inspired by Mosquito, MalaRIA and BeEF - mygg.js (Norwegian for mosquito) is a t
 You should run mygg.js on a Internet-facing server with a domain pointing to it.  
 If you do not have valid certificate to the domain, then you can use Let's Encrypt:
 ```
-$ certbot
+$ sudo add-apt-repository ppa:certbot/certbot
+$ sudo apt-get update
+$ sudo apt install certbot
+$ sudo certbot certonly --standalone --preferred-challenges http -d example.com
 ```
-
-Go over the configuration section at the top of mygg.js and make sure eveything is in order.  
+The certificate and key files should now be located in /etc/letsencrypt/live/example.com.  
+Configure mygg.js accordingly in the top section of the file and make sure it points to the right files.    
 Start mygg.js:
 ```
 $ node mygg.js
 ```
 mygg.js will then output the payload which you inject in the XSS.  
-Two ports will be opened on the server running mygg.js, which by default is 443 and 8000. Port 443 is for "Command & Control" communication with the hooked browser. A proxy on port 8000 will be opened that forwards communication to the hooked browser via mygg.js.
+Two ports will be opened on the server running mygg.js, which by default is 443 and 8000. Port 443 is used to serve the hook and for polling. Port 8000 is a proxy that forwards communication to the hooked browser via mygg.js.
 
 # TODOs
 
