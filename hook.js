@@ -13,7 +13,8 @@ function makeRequest(id, method, url, head, body){
             };
             mygg_http.open("POST", "https://127.0.0.1:443/responses", true);
             mygg_http.setRequestHeader("Content-Type","application/json");
-            mygg_http.send('{"id":' + id.toString() + ', "headers":"'+resp_headers+'","body":"'+resp_body+'"}');
+            var obj = `{"id": ${id.toString()}, "url": ${url}, "status": ${target_http.status}, "headers": ${resp_headers}, "body": ${resp_body}}`
+            mygg_http.send(obj);
         }
     };
 
