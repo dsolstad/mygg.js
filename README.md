@@ -17,13 +17,13 @@ Start mygg.js:
 ```
 $ node mygg.js
 ```
-mygg.js will then output the payload which you inject in the XSS.  
+mygg.js will then output the payload which you insert in target website. 
 Two ports will be opened on the server running mygg.js, which by default is 443 and 8081. Port 443 is used for serving the hook, polling and receiving responses. Port 8081 is a proxy that forwards communication to the hooked browser. Configure your browser to proxy through the latter port.
 
 # TODOs
 
 * Seperate hooked browsers.
-* Implement the use of websockets instead of HTTP polling.
+* Consider implementing the use of websockets instead of HTTP polling.
 
 # FAQ
 Q: Why not use the other tools instead?  
