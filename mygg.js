@@ -6,16 +6,16 @@ const fs = require('fs');
 
 const config = {
     // Change web_host to your domain
-    web_host: '192.168.0.28',           
+    web_host: 'example.com',           
     web_ip: '0.0.0.0',
     web_port: 443,
     key: fs.readFileSync('server.key'),
     cert: fs.readFileSync('server.crt'),
     // Either set proxy_ip to 127.0.0.1 and use ssh+portforwarding 
     // or bind it to 0.0.0.0 and put your remote addr in proxy_allowed_ips
-    proxy_ip: '192.168.0.28',
+    proxy_ip: '127.0.0.1',
     proxy_port: 8081,
-    proxy_allowed_ips: ['127.0.0.1', '192.168.0.19'],
+    proxy_allowed_ips: ['127.0.0.1'],
 }
 
 /* 
@@ -37,7 +37,7 @@ http.createServer(function (req, res) {
     if (config.proxy_allowed_ips.indexOf(client_ipaddr) === -1) {
         console.log(`[+] Denied client ${client_ipaddr} to connect to proxy`);
         res.writeHead(403);
-		res.end();
+	    res.end();
         return;
     }
 
