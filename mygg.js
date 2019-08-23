@@ -39,7 +39,7 @@ http.createServer(function (req, res) {
     if (config.proxy_allowed_ips.indexOf(client_ipaddr) === -1) {
         console.log(`[+] Denied client ${client_ipaddr} to connect to proxy`);
         res.writeHead(403);
-	    res.end();
+        res.end();
         return;
     }
 
