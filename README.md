@@ -22,6 +22,7 @@ Two ports will be opened on the server running mygg.js, which by default is 443 
 
 # TODOs
 
+* A lot of testing.
 * Seperate hooked browsers.
 * Consider implementing the use of websockets instead of HTTP polling.
 
