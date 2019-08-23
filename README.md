@@ -17,7 +17,7 @@ Start mygg.js:
 ```
 $ node mygg.js
 ```
-mygg.js will then output the payload which you insert in target website. 
+mygg.js will then output the payload which you insert in the target website. 
 Two ports will be opened on the server running mygg.js, which by default is 443 and 8081. Port 443 is used for serving the hook, polling and receiving responses. Port 8081 is a proxy that forwards communication to the hooked browser. Configure your browser to proxy through the latter port.
 
 # TODOs
