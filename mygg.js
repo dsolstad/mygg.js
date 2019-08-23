@@ -51,18 +51,18 @@ http.createServer(function (req, res) {
 
     /* Add new task */
     var id = task_counter;
-	var new_task = {"id": task_counter++, "method": req.method, "url": path, "head": req.headers, "body": req.body}
+    var new_task = {"id": task_counter++, "method": req.method, "url": path, "head": req.headers, "body": req.body}
 	
-	tasks_pending.push(new_task);
+    tasks_pending.push(new_task);
 
-	task_callbacks[new_task.id] = function (result) {
+    task_callbacks[new_task.id] = function (result) {
         var headers_decoded = Buffer.from(result.headers, 'base64');
         var body_decoded = Buffer.from(result.body, 'base64');
         //console.log("Headers:\n" + headers_decoded);
         //console.log("Body:\n" + body_decoded);
         res.writeHead(200, stripHSTS(headers_decoded));
         res.end(https2http(body_decoded));
-	};
+    };
 }).listen(config.proxy_port, config.proxy_ip, function (err) {
     if (err) return console.error(err)
     var info = this.address()
