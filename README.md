@@ -19,6 +19,10 @@ $ node mygg.js
 ```
 mygg.js will then output the payload which you insert in the target website. 
 Two ports will be opened on the server running mygg.js, which by default is 443 and 8081. Port 443 is used for serving the hook, polling and receiving responses. Port 8081 is a proxy that forwards communication to the hooked browser. Configure your browser to proxy through the latter port.
+  
+When browsing through the proxy, use http:// instead of https://. If your browser forces over to https, then clear the HSTS cache in your browser.  
+Firefox: ctrl+shift+h -> Right click on the target website and hit "Forget about this site" -> Restart Firefox.  
+Chrome: Visit chrome://net-internals/#hsts -> scroll down to "Delete domain security policies" -> Enter domain.
 
 # TODOs
 
