@@ -50,7 +50,6 @@ http.createServer(function (req, res) {
     console.log("[+] Requesting : " + path)
 
     /* Add new task */
-    var id = task_counter;
     var new_task = {"id": task_counter++, "method": req.method, "url": path, "head": req.headers, "body": req.body}
 	
     tasks_pending.push(new_task);
