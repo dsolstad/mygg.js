@@ -30,7 +30,7 @@ var task_callbacks = {};
 
 /* The HTTP proxy server that communicates with mygg */
 
-var task_counter = 10;
+var task_counter = 0;
 
 http.createServer(function (req, res) {
     /* Checks if the client is allowed */
