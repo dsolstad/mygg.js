@@ -12,7 +12,7 @@ $ sudo certbot certonly --standalone --preferred-challenges http -d example.com
 ```
 The certificate and key files should now be located in /etc/letsencrypt/live/example.com.  
   
-Or you can use self-signed certificate, but note that this won't work optimally:
+Or you can use a self-signed certificate, but note that the victim browser needs to accept the self-signed certificate for the browser to load the hook.
 ```
 $ openssl genrsa -des3 -out server.orig.key 2048
 $ openssl rsa -in server.orig.key -out server.key
