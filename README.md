@@ -43,3 +43,7 @@ Chrome: Visit chrome://net-internals/#hsts -> scroll down to "Delete domain secu
 # FAQ
 Q: Why not use the other tools instead?  
 A: Mosquito and MalaRIA are old and does not support HTTPS. BeEF is barely maintained and its XSS proxy is full of bugs.  
+
+# LICENSE
+  
+GPLv3
