@@ -1,7 +1,7 @@
 # mygg.js
 Inspired by Mosquito, MalaRIA and BeEF - mygg.js (*Norwegian for mosquito*) is a tool to proxy via cross-site scripting. It is small, simple, dependancy free, easy to configure and HTTPS-supported. The reason to use a XSS proxy is to browse through the hooked browser, which will append authentication headers, including cookies (even with httponly) automatically, that you would not otherwise get to retrieve with JavaScript.
 
-<img src="https://github.com/dsolstad/mygg.js/blob/master/diagram.png" alt="drawing" width="869" height="414"/>
+<img src="https://github.com/dsolstad/mygg.js/blob/master/diagram.png" alt="drawing" width="698" height="320"/>
 
 # How to use
 You should run mygg.js on a Internet-facing server with a domain pointing to it.  
