@@ -75,22 +75,23 @@ proxy.createServer(function (req, res) {
 	} else {
         var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "head": req.headers, "body": null}
         tasks_pending.push(new_task);
-    }    
+        task_callbacks[new_task.id] = function (result) {
+            var body_decoded = Buffer.from(result.body, 'base64');
+            var body_fixed = https2http(body_decoded);
+            var headers_decoded = Buffer.from(result.headers, 'base64');
+            var headers_fixed = stripHeaders(str2json(headers_decoded))
+            var headers_fixed = fixContentLength(headers_fixed, body_fixed.length);
+            console.log("[+] Received status:\n" + result.status);
+            console.log("[+] Received headers:\n" + headers_decoded);
+            console.log("[+] Received body:\n" + body_decoded);
+            console.log("###############################################################");
 
-    task_callbacks[new_task.id] = function (result) {
-        var body_decoded = Buffer.from(result.body, 'base64');
-        var body_fixed = https2http(body_decoded);
-        var headers_decoded = Buffer.from(result.headers, 'base64');
-        var headers_fixed = stripHeaders(str2json(headers_decoded))
-        var headers_fixed = fixContentLength(headers_fixed, body_fixed.length);
-        console.log("[+] Received status:\n" + result.status);
-        console.log("[+] Received headers:\n" + headers_decoded);
-        console.log("[+] Received body:\n" + body_decoded);
-        console.log("###############################################################");
+            res.writeHead(result.status, headers_fixed);
+            res.end(body_fixed);
+        };
+    }
 
-        res.writeHead(result.status, headers_fixed);
-        res.end(body_fixed);
-    };
+
 }).listen(config.proxy_port, config.proxy_interface, function (err) {
     if (err) return console.error(err)
     var info = this.address()
