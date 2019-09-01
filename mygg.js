@@ -87,7 +87,7 @@ proxy.createServer(function (req, res) {
             console.log("###############################################################");
 
             res.writeHead(result.status, headers_fixed);
-            res.end(body_fixed);
+            res.end();
         };
     }
 
