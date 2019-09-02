@@ -39,6 +39,7 @@ Chrome: Visit chrome://net-internals/#hsts -> scroll down to "Delete domain secu
 * A lot of testing.
 * Seperate hooked browsers.
 * Consider implementing the use of websockets instead of HTTP polling.
+* Consider implementing HTTPS interception instead of HTTPS downgrading.
 
 # FAQ
 Q: Why not use the other tools instead?  
