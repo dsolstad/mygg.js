@@ -3,14 +3,14 @@ const config = {
     // Change web_domain to your domain.
     web_domain: 'example.com',           
     web_interface: '0.0.0.0',
-    web_port: 80,
-    web_protocol: 'http',
+    web_port: 443,
+    web_protocol: 'https',
     polling_time: 2000,
     key: './server.key',
     cert: './server.crt',
     // IP-addresses that should not get hooked, e.g. your own.
     do_not_hook: ['127.0.0.1'],
-    // Either set proxy_ip to 127.0.0.1 and use ssh+portforwarding (if mygg.js runs remote)
+    // Either set proxy_interface to 127.0.0.1 and use ssh+portforwarding (if mygg.js runs remote)
     // or bind it to 0.0.0.0 and put your remote addr in proxy_allowed_ips.
     proxy_interface: '127.0.0.1',
     proxy_port: 8081,
