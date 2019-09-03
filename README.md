@@ -23,8 +23,9 @@ $ openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
 ```
 Configure mygg.js in the top section of the file accordingly and make sure it points to the right files.  
   
-Start mygg.js:
+Download and start mygg.js:
 ```
+$ https://raw.githubusercontent.com/dsolstad/mygg.js/master/mygg.js
 $ node mygg.js
 ```
 mygg.js will then output the payload which you insert in the target website. 
