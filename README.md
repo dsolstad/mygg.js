@@ -41,8 +41,7 @@ Chrome: Visit chrome://net-internals/#hsts -> scroll down to "Delete domain secu
 
 # TODOs
 
-* A lot of testing.
-* Seperate hooked browsers.
+* Fix base64 conversion problem on images.
 * Consider implementing the use of websockets instead of HTTP polling.
 * Consider implementing HTTPS interception instead of HTTPS downgrading.
 
