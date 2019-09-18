@@ -8,7 +8,7 @@ const config = {
     polling_time: 2000,
     key: './server.key',
     cert: './server.crt',
-    // Either set proxy_interface to 127.0.0.1 and use ssh+portforwarding (if mygg.js runs remote)
+    // If mygg is running on a remote server, then either set proxy_interface to 127.0.0.1 and use ssh+portforwarding
     // or bind it to 0.0.0.0 and put your remote addr in proxy_allowed_ips.
     proxy_interface: '127.0.0.1',
     proxy_port: 8081,
