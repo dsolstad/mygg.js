@@ -196,6 +196,7 @@ function fixContentLength(headers, new_length) {
 }
 
 /* Convert raw headers to JSON with lowercase keys */
+/*
 function str2json(input) {
     var input = input.trim();
     var x = input.split("\r\n");
@@ -209,6 +210,18 @@ function str2json(input) {
     }
     buf = buf + '}';
     return JSON.parse(buf);
+}*/
+
+function str2json(headers) {
+    var arr = headers.trim().split(/[\r\n]+/);
+    var header_map = {};
+    arr.forEach(function (line) {
+        var parts = line.split(': ');
+        var header = parts.shift().toLowerCase();
+        var value = parts.join('');
+        header_map[header] = value;
+    });
+    return header_map;
 }
 
 /* The payload that downloads mygg */
