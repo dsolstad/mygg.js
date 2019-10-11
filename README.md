@@ -16,10 +16,10 @@ The certificate and key files should now be located in /etc/letsencrypt/live/exa
   
 Or you can use a self-signed certificate, but note that the victim browser needs to accept the self-signed certificate for the browser to load the hook.
 ```
-$ openssl genrsa -des3 -out server.orig.key 2048
-$ openssl rsa -in server.orig.key -out server.key
-$ openssl req -new -key server.key -out server.csr
-$ openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt 
+openssl genrsa -des3 -out server.orig.key 2048
+openssl rsa -in server.orig.key -out server.key
+openssl req -new -key server.key -out server.csr
+openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt 
 ```
 If the target website is running over plain HTTP, then you can skip the certificate part, but remember to change the protocol parameter in the configuration.
 
