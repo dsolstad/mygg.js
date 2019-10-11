@@ -7,10 +7,10 @@ Inspired by Mosquito, MalaRIA and BeEF - mygg.js (*Norwegian for mosquito*) is a
 You should run mygg.js on a Internet-facing server with a domain pointing to it.  
 If you do not have valid certificate to the domain, then you can use Let's Encrypt:
 ```
-$ sudo add-apt-repository ppa:certbot/certbot
-$ sudo apt update
-$ sudo apt install certbot
-$ sudo certbot certonly --standalone --preferred-challenges http -d example.com
+sudo add-apt-repository ppa:certbot/certbot
+sudo apt update
+sudo apt install certbot
+sudo certbot certonly --standalone --preferred-challenges http -d example.com
 ```
 The certificate and key files should now be located in /etc/letsencrypt/live/example.com.  
   
@@ -25,13 +25,13 @@ If the target website is running over plain HTTP, then you can skip the certific
 
 Download:
 ```
-$ wget https://raw.githubusercontent.com/dsolstad/mygg.js/master/mygg.js
+wget https://raw.githubusercontent.com/dsolstad/mygg.js/master/mygg.js
 ```
 Configure mygg.js in the top section of the file accordingly and make sure it points to the right files.  
   
 Start:
 ```
-$ node mygg.js
+node mygg.js
 ```
 mygg.js will then output the payload which you insert in the target website. 
 Two ports will be opened on the server running mygg.js, which by default is 443 and 8081. Port 443 is used for serving the hook, polling and receiving responses. Port 8081 is a proxy that forwards communication to the hooked browser. Configure your browser to proxy through the latter port.
