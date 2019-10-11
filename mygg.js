@@ -44,7 +44,8 @@ proxy.createServer(function (req, res) {
 
     console.log(`[+] Whitelisted client ${client_ipaddr} connected to proxy`);
     console.log("[+] Requesting: " + req.url)
-    var url = new URL(req.url).pathname;
+    var url = new URL(req.url)
+    var url = url.pathname + '?' + url.searchParams;
 
     /* Check if request from proxy contains a body */
     if (req.headers['content-length'] > 0) {
