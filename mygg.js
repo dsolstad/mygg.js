@@ -1,10 +1,11 @@
 /* Config */
 const config = {
-    // Change web_domain to your domain.
+    // Change web_domain to your domain. 
+    // If you don't have a domain, then change web_domain to the ipaddr of the server hosting mygg.js.
     web_domain: 'example.com',           
     web_interface: '0.0.0.0',
     web_port: 443,
-    web_protocol: 'https',
+    web_protocol: 'http',
     polling_time: 2000,
     key: './server.key',
     cert: './server.crt',
