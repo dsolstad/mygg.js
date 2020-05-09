@@ -29,7 +29,8 @@ openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
 ```
 
 Example config using self-signed certificate, where 192.168.1.2 is the server hosing mygg.js:
-```const config = {
+```
+const config = {
     web_domain: '192.168.1.2',           
     web_interface: '192.168.1.2',
     web_port: 443,
@@ -53,7 +54,8 @@ sudo certbot certonly --standalone --preferred-challenges http -d example.com
 The certificate and key files should now be located in /etc/letsencrypt/live/example.com. Change the *web_domain* parameter to 'example.com'. The *key* and *cert* parameters should point to the files generated from certbot.
 
 Example config using Let's Encrypt, where example.com is the server hosting mygg.js:
-```const config = {
+```
+const config = {
     web_domain: 'example.com,           
     web_interface: '0.0.0.0',
     web_port: 443,
