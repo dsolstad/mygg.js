@@ -6,10 +6,11 @@ Inspired by Mosquito, MalaRIA and BeEF - mygg.js (*Norwegian for mosquito*) is a
 # Setup
 
 The server running mygg.js needs to be reachable from the hooked web browser, which means that the mygg.js server needs to be exposed directly on the Internet, unless the victim is on the same network as the mygg.js server.
+ 
+The only prerequisite is to have NodeJS above v8.11.2 and be able to run mygg.js as root.
 
 ## Download
 ```
-apt install nodejs
 wget https://raw.githubusercontent.com/dsolstad/mygg.js/master/mygg.js
 ```
 
