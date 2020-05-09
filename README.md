@@ -80,6 +80,10 @@ When browsing through the proxy, use http:// instead of https://. If your browse
 Firefox: ctrl+shift+h -> Right click on the target website and hit "Forget about this site" -> Restart Firefox.  
 Chrome: Visit chrome://net-internals/#hsts -> scroll down to "Delete domain security policies" -> Enter domain.
 
+Normally you will only be able to browse the website where the hook was loaded, due to same-origin-policy. However, some sites are misconfigured, i.e. by having an open access-control-allow-origin header, which can make it possible to browse those too.
+  
+You might see some errors in the JavaScript console of the hooked browser, but don't worry, it is supposed to be like that.
+
 # TODOs
 
 * Fix base64 conversion problem on images.
