@@ -5,6 +5,8 @@ Inspired by Mosquito, MalaRIA and BeEF - mygg.js (*Norwegian for mosquito*) is a
 
 # Setup
 
+The server running mygg.js needs to be reachable from the hooked web browser, which means that the mygg.js server needs to be exposed directly on the Internet, unless the victim is on the same network as the mygg.js server.
+
 ## Download
 ```
 apt install nodejs
@@ -41,7 +43,7 @@ Example config using self-signed certificate, where 192.168.1.2 is the server ho
 }
 ```
 
-To use a legitimate CA instead, you can use Let's Encrypt:
+To use a legitimate CA instead, you can use Let's Encrypt against a domain you controll:
 ```
 sudo add-apt-repository ppa:certbot/certbot
 sudo apt update
