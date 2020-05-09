@@ -72,7 +72,7 @@ Example config using Let's Encrypt, where example.com is the server hosting mygg
 node mygg.js
 ```
 When mygg.js is started, it will output the payload which you insert in the target website, e.g. via Cross-site scripting.
-Two ports will be opened on the server running mygg.js, which by default is 443 and 8081. Port 443 is used for serving the hook, polling and receiving responses. Port 8081 is where you should configure your attacking web browser to proxy through, to forward communication to the hooked browser.
+Two ports will be opened on the server running mygg.js, which by default is 80 and 8081. Port 80 is used for serving the hook, polling and receiving responses. Port 8081 is where you should configure your attacking web browser to proxy through, to forward communication to the hooked browser.
   
 When browsing through the proxy, use http:// instead of https://. If your browser forces over to https, then clear the HSTS cache in your browser.  
 Firefox: ctrl+shift+h -> Right click on the target website and hit "Forget about this site" -> Restart Firefox.  
