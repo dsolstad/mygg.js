@@ -22,7 +22,7 @@ In the top of the mygg.js file, there are some configuration parameters. If the 
 If the target website is only supporting HTTPS, then you need to change the *web_protocol* parameter to 'https' and *web_port* to 443.
 
 ## Certificate
-To get a certificate, there are two options: Self-signed or a legitimate CA. The easiest is to use a self-signed certificated, but remember that the victim browser needs to accept the self-signed certificate to load the hook and communicating with mygg.js.
+If you need to support HTTPS, then you need a certificate, where there are two options: Self-signed or a legitimate CA. The easiest is to use a self-signed certificated, but remember that the victim browser needs to accept the self-signed certificate to load the hook and communicating with mygg.js. This means that from the victim browser, you first need to browse to the attacking mygg.js server to accept the certificiate. 
 
 Run the following commands in the same folder as where mygg.js resides to generate a self-signed certificate:
 ```
@@ -48,7 +48,7 @@ const config = {
 }
 ```
 
-To use a legitimate CA instead, you can use Let's Encrypt against a domain you controll:
+To use a legitimate CA instead, you can use Let's Encrypt against a domain you control:
 ```
 sudo add-apt-repository ppa:certbot/certbot
 sudo apt update
