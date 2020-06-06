@@ -9,16 +9,19 @@ The server running mygg.js needs to be reachable from the hooked web browser, wh
  
 The only prerequisite is to have NodeJS above v8.11.2 and be able to run mygg.js as root.
 
-## Download
+# Download
 ```
 wget https://raw.githubusercontent.com/dsolstad/mygg.js/master/mygg.js
 ```
 
-## Configuration
+# Configuration
+
+## HTTP / HTTPS
 In the top of the mygg.js file, there are some configuration parameters. If the target website is running over plain HTTP, you only need to change the *web_domain* parameter to the IP-address of the server hosting mygg.js, and then you can skip to the Start section.
   
 If the target website is only supporting HTTPS, then you need to change the *web_protocol* parameter to 'https' and *web_port* to 443.
-  
+
+## Certificate
 To get a certificate, there are two options: Self-signed or a legitimate CA. The easiest is to use a self-signed certificated, but remember that the victim browser needs to accept the self-signed certificate to load the hook and communicating with mygg.js.
 
 Run the following commands in the same folder as where mygg.js resides to generate a self-signed certificate:
@@ -29,7 +32,7 @@ openssl req -new -key server.key -out server.csr
 openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt 
 ```
 
-Example config using self-signed certificate, where 192.168.1.2 is the server hosing mygg.js:
+Example config using self-signed certificate, where 192.168.1.2 is the server hosting mygg.js:
 ```
 const config = {
     web_domain: '192.168.1.2',           
@@ -70,7 +73,7 @@ const config = {
 }
 ```
   
-## Start
+# Start
 ```
 node mygg.js
 ```
