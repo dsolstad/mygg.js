@@ -26,10 +26,9 @@ If you need to support HTTPS, then you need a certificate, where there are two o
 
 Run the following commands in the same folder as where mygg.js resides to generate a self-signed certificate:
 ```
-openssl genrsa -des3 -out server.orig.key 2048
-openssl rsa -in server.orig.key -out server.key
-openssl req -new -key server.key -out server.csr
-openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt 
+openssl genrsa -out server-key.pem 2048
+openssl req -new -key server-key.pem -out server-csr.pem
+openssl x509 -req -in server-csr.pem -signkey server-key.pem -out server-cert.pem
 ```
 
 Example config using self-signed certificate, where 192.168.1.2 is the server hosting mygg.js:
