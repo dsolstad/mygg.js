@@ -7,8 +7,10 @@ const config = {
     web_port: 80,
     web_protocol: 'http',
     polling_time: 2000,
-    key: './server.key',
-    cert: './server.crt',
+    key: './server-key.pem',
+    cert: './server-cert.pem',
+    // Provides additional debug output
+    debug: 1,
     // If mygg is running on a remote server, then either set proxy_interface to 127.0.0.1 and use ssh+portforwarding
     // or bind it to 0.0.0.0 and put your remote addr in proxy_allowed_ips.
     proxy_interface: '127.0.0.1',
@@ -44,7 +46,7 @@ proxy.createServer(function (req, res) {
     }
 
     console.log(`[+] Whitelisted client ${client_ipaddr} connected to proxy`);
-    console.log("[+] Requesting: " + req.url)
+    console.log("[+] Requesting: " + req.method + " " + req.url)
     
     var urlObj = new URL(req.url)
     var url = urlObj.pathname;
@@ -74,9 +76,9 @@ proxy.createServer(function (req, res) {
                 var headers_fixed = fixContentLength(headers_fixed, body_fixed.length);
 
                 console.log("[+] Received status: " + result.status);
-                console.log("[+] Received headers:\n"); console.log(headers_fixed);
-                console.log("[+] Received body:\n" + body_fixed);
-                console.log("###############################################################");
+                if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers_fixed); }
+                if (config.debug) { console.log("[+] Received body:\n" + body_fixed); }
+                console.log("[+] -------------------------------- [+]");
 
                 res.writeHead(result.status, headers_fixed);
                 res.end(body_fixed);
@@ -95,10 +97,10 @@ proxy.createServer(function (req, res) {
             var headers_fixed = stripHeaders(headers_fixed);
             var headers_fixed = fixContentLength(headers_fixed, body_fixed.length);
 
-            console.log("[+] Received status: " + result.status);
-            console.log("[+] Received headers:\n"); console.log(headers_fixed);
-            console.log("[+] Received body:\n" + body_fixed);
-            console.log("###############################################################");
+	    console.log("[+] Received status: " + result.status);
+	    if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers_fixed); }
+	    if (config.debug) { console.log("[+] Received body:\n" + body_fixed); }
+	    console.log("[+] -------------------------------- [+]");
 
             res.writeHead(result.status, headers_fixed);
             res.end(body_fixed);
@@ -200,23 +202,6 @@ function fixContentLength(headers, new_length) {
     headers['Content-Length'] = new_length;
     return headers;
 }
-
-/* Convert raw headers to JSON with lowercase keys */
-/*
-function str2json(input) {
-    var input = input.trim();
-    var x = input.split("\r\n");
-    var buf = '{';
-    for (var i = 0; i < x.length; i++) {
-        var y = x[i].split(': ');
-        var key = y[0].replace(':', '').replace('"', '').toLowerCase();
-        var val = y[1].replace(/\"/g, '');
-        buf = buf + '"' + key + '": "' + val + '"';
-        if (i != x.length-1) buf = buf + ', ';
-    }
-    buf = buf + '}';
-    return JSON.parse(buf);
-}*/
 
 function str2json(headers) {
     var arr = headers.trim().split(/[\r\n]+/);
