@@ -1,16 +1,17 @@
 # mygg.js
-Inspired by Mosquito, MalaRIA and BeEF - mygg.js (*Norwegian for mosquito*) is a tool, written in Node/JavaScript, to proxy web traffic via cross-site scripting. It is small, simple, dependancy free, easy to configure and HTTPS-supported. The reason to use a XSS proxy is to browse through hooked browsers, which will append authentication headers, including cookies (even with httponly) automatically, that you would not otherwise get to retrieve with JavaScript.
+Inspired by Mosquito, MalaRIA and BeEF - mygg.js (*Norwegian for mosquito*) is a tool, written in Node/JavaScript, to proxy web traffic via cross-site scripting. It is small, simple, easy to configure and HTTPS-supported. The reason to use a XSS proxy is to browse through hooked browsers, which will append authentication headers, including cookies (even with httponly) automatically, that you would not otherwise get to retrieve with JavaScript.
 
 <img src="https://github.com/dsolstad/mygg.js/blob/master/diagram.png" alt="drawing" width="698" height="320"/>
 
-# Setup
+# Download and setup
 
 The server running mygg.js needs to be reachable from the hooked web browser, which means that the mygg.js server needs to be exposed directly on the Internet, unless the victim is on the same network as the mygg.js server.
  
-The only prerequisite is to have NodeJS above v8.11.2 and be able to run mygg.js as root.
+The only prerequisite is to have NodeJS above v8.11.2, Busboy formData library and be able to run mygg.js as root.
 
-# Download
 ```
+apt install nodejs npm
+npm install busboy
 wget https://raw.githubusercontent.com/dsolstad/mygg.js/master/mygg.js
 ```
 
@@ -22,8 +23,9 @@ In the top of the mygg.js file, there are some configuration parameters. If the 
 If the target website is only supporting HTTPS, then you need to change the *web_protocol* parameter to 'https' and *web_port* to 443.
 
 ## Certificate
-If you need to support HTTPS, then you need a certificate, where there are two options: Self-signed or a legitimate CA. The easiest is to use a self-signed certificated, but remember that the victim browser needs to accept the self-signed certificate to load the hook and communicating with mygg.js. This means that from the victim browser, you first need to browse to the attacking mygg.js server to accept the certificiate. 
+If you need to support HTTPS, then you need a certificate, where there are two options: Self-signed or a legitimate CA. The easiest is to use a self-signed certificated, but remember that the victim browser needs to accept the self-signed certificate to load the hook and communicate with mygg.js. This means that from the victim browser, you first need to browse to the attacking mygg.js server to accept the certificiate. 
 
+### Self-signed
 Run the following commands in the same folder as where mygg.js resides to generate a self-signed certificate:
 ```
 openssl genrsa -out server-key.pem 2048
@@ -47,6 +49,7 @@ const config = {
 }
 ```
 
+### Let's Encrypt
 To use a legitimate CA instead, you can use Let's Encrypt against a domain you control:
 ```
 sudo add-apt-repository ppa:certbot/certbot
@@ -79,7 +82,8 @@ node mygg.js
 When mygg.js is started, it will output the payload which you insert in the target website, e.g. via Cross-site scripting.
 Two ports will be opened on the server running mygg.js, which by default is 80 and 8081. Port 80 is used for serving the hook, polling and receiving responses. Port 8081 is where you should configure your attacking web browser to proxy through, to forward communication to the hooked browser.
   
-When browsing through the proxy, use http:// instead of https://. If your browser forces over to https, then clear the HSTS cache in your browser.  
+When browsing through the proxy, use http:// instead of https://. If your browser forces over to https, then clear the HSTS cache in your browser.
+  
 Firefox: ctrl+shift+h -> Right click on the target website and hit "Forget about this site" -> Restart Firefox.  
 Chrome: Visit chrome://net-internals/#hsts -> scroll down to "Delete domain security policies" -> Enter domain.
 
@@ -89,7 +93,7 @@ You might see some errors in the JavaScript console of the hooked browser, but d
 
 # TODOs
 
-* Fix base64 conversion problem on images.
+* Automate generation of self-signed certificate.
 * Consider implementing the use of websockets instead of HTTP polling.
 * Consider implementing HTTPS interception instead of HTTPS downgrading.
 
