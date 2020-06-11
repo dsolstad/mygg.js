@@ -7,48 +7,22 @@ Inspired by Mosquito, MalaRIA and BeEF - mygg.js (*Norwegian for mosquito*) is a
 
 The server running mygg.js needs to be reachable from the hooked web browser, which means that the mygg.js server needs to be exposed directly on the Internet, unless the victim is on the same network as the mygg.js server.
  
-The only prerequisite is to have NodeJS above v8.11.2, Busboy formData library and be able to run mygg.js as root.
+The only prerequisite is to have NodeJS above v8.11.2, Busboy formData library, OpenSSL and be able to run mygg.js as root.
 
 ```
-apt install nodejs npm
+apt install nodejs npm openssl
 npm install busboy
 wget https://raw.githubusercontent.com/dsolstad/mygg.js/master/mygg.js
 ```
 
 # Configuration
+In the top of the mygg.js file, there are some configuration parameters. The only thing you really need to change is the domain parameter. If you don't have a domain, change domain to the IP address of the server hosting mygg.js.
 
-## HTTP / HTTPS
-In the top of the mygg.js file, there are some configuration parameters. If the target website is running over plain HTTP, you only need to change the *web_domain* parameter to the IP-address of the server hosting mygg.js, and then you can skip to the Start section.
-  
-If the target website is only supporting HTTPS, then you need to change the *web_protocol* parameter to 'https' and *web_port* to 443.
+## Self-signed certificate
+When you start mygg.js, it will automatically generate a self-signed certificate, but remember that the victim browser needs to accept the self-signed certificate to load the hook and communicate with mygg.js. This means that from the victim browser, you first need to browse to the attacking mygg.js server to accept the certificiate. 
 
-## Certificate
-If you need to support HTTPS, then you need a certificate, where there are two options: Self-signed or a legitimate CA. The easiest is to use a self-signed certificated, but remember that the victim browser needs to accept the self-signed certificate to load the hook and communicate with mygg.js. This means that from the victim browser, you first need to browse to the attacking mygg.js server to accept the certificiate. 
-
-### Self-signed
-Run the following commands in the same folder as where mygg.js resides to generate a self-signed certificate:
-```
-openssl req -x509 -newkey rsa:2048 -keyout ./server-key.pem -out ./server-cert.pem -days 365 -nodes -subj '/CN=localhost'
-```
-
-Example config using self-signed certificate, where 192.168.1.2 is the server hosting mygg.js:
-```
-const config = {
-    web_domain: '192.168.1.2',           
-    web_interface: '192.168.1.2',
-    web_port: 443,
-    web_protocol: 'https',
-    polling_time: 2000,
-    key: './server-key.pem',
-    cert: './server-cert.pem',
-    proxy_interface: '127.0.0.1',
-    proxy_port: 8081,
-    proxy_allowed_ips: ['127.0.0.1'],
-}
-```
-
-### Let's Encrypt
-To use a legitimate CA instead, you can use Let's Encrypt against a domain you control:
+## Let's Encrypt
+To use a legitimate CA instead of self-signed, you can use Let's Encrypt against a domain you control:
 ```
 sudo add-apt-repository ppa:certbot/certbot
 sudo apt update
@@ -60,13 +34,15 @@ The certificate and key files should now be located in /etc/letsencrypt/live/exa
 Example config using Let's Encrypt, where example.com is the server hosting mygg.js:
 ```
 const config = {
-    web_domain: 'example.com,           
-    web_interface: '0.0.0.0',
-    web_port: 443,
-    web_protocol: 'https',
+    domain: 'example.com',
+    http_interface: '0.0.0.0',
+    https_interface: '0.0.0.0',
+    http_port: 80,
+    https_port: 443,
     polling_time: 2000,
     key: '/etc/letsencrypt/live/privkey.pem',
     cert: '/etc/letsencrypt/live/fullchain.pem',
+    debug: 0,
     proxy_interface: '127.0.0.1',
     proxy_port: 8081,
     proxy_allowed_ips: ['127.0.0.1'],
@@ -78,7 +54,7 @@ const config = {
 node mygg.js
 ```
 When mygg.js is started, it will output the payload which you insert in the target website, e.g. via Cross-site scripting.
-Two ports will be opened on the server running mygg.js, which by default is 80 and 8081. Port 80 is used for serving the hook, polling and receiving responses. Port 8081 is where you should configure your attacking web browser to proxy through, to forward communication to the hooked browser.
+Three ports will be opened on the server running mygg.js, which by default is 80, 443 and 8081. Port 80 and 443 is used for serving the hook, polling and receiving responses, over both HTTP and HTTPS. Port 8081 is where you should configure your attacking web browser to proxy through, to forward communication to the hooked browser.
   
 When browsing through the proxy, use http:// instead of https://. If your browser forces over to https, then clear the HSTS cache in your browser.
   
@@ -91,7 +67,6 @@ You might see some errors in the JavaScript console of the hooked browser, but d
 
 # TODOs
 
-* Automate generation of self-signed certificate.
 * Consider implementing the use of websockets instead of HTTP polling.
 * Consider implementing HTTPS interception instead of HTTPS downgrading.
 
