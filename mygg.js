@@ -253,7 +253,7 @@ function stripHeaders(headers) {
 
 /* Strips complete URLs with hook.js to "javascript", which will be ignored. */
 function stripHooks(body) {
-    return body.replace(/https?:\/\/.*?\/hook\.js/g, 'javascript:#');
+    return body.replace(/https?:\/\/[^\/]*?\/hook\.js/g, 'javascript:#');
 }
 
 /* Convert links in the body from https to http. */
