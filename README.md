@@ -54,12 +54,16 @@ const config = {
 node mygg.js
 ```
 When mygg.js is started, it will output the payload which you insert in the target website, e.g. via Cross-site scripting.
-Three ports will be opened on the server running mygg.js, which by default is 80, 443 and 8081. Port 80 and 443 is used for serving the hook, polling and receiving responses, over both HTTP and HTTPS. Port 8081 is where you should configure your attacking web browser to proxy through, to forward communication to the hooked browser.
+Three ports will be opened on the server running mygg.js, which by default is 80, 443 and 8081. 
+
++ Port 80 - Used for serving the hook, polling and receiving responses, over HTTP.
++ Port 443 - Used for serving the hook, polling and receiving responses, over HTTPS. 
++ Port 8081 - The proxy where you should configure your attacking web browser to proxy through, to forward communication to the hooked browser.
   
-When browsing through the proxy, use http:// instead of https://. If your browser forces over to https, then clear the HSTS cache in your browser.
+When browsing through the proxy, use http:// instead of https://. If your browser forces over to https, then clear the HSTS cache in your browser by doing the following:
   
-Firefox: ctrl+shift+h -> Right click on the target website and hit "Forget about this site" -> Restart Firefox.  
-Chrome: Visit chrome://net-internals/#hsts -> scroll down to "Delete domain security policies" -> Enter domain.
++ Firefox: ctrl+shift+h -> Right click on the target website and hit "Forget about this site" -> Restart Firefox.  
++ Chrome: Visit chrome://net-internals/#hsts -> scroll down to "Delete domain security policies" -> Enter domain.
 
 Normally you will only be able to browse the website where the hook was loaded, due to same-origin-policy. However, some sites are misconfigured, i.e. by having an open access-control-allow-origin header, which can make it possible to browse those too.
   
