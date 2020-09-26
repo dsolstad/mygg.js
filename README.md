@@ -1,5 +1,5 @@
 # mygg.js
-Inspired by Mosquito, MalaRIA and BeEF - mygg.js (*Norwegian for mosquito*) is a tool, written in Node/JavaScript, to proxy web traffic via cross-site scripting. It is small, simple, easy to configure and HTTPS-supported. The reason to use a XSS proxy is to browse through hooked browsers, which will append authentication headers, including cookies (even with httponly) automatically, that you would not otherwise get to retrieve with JavaScript.
+You got an XSS, but are unable to pop the session cookies? Inspired by Mosquito, MalaRIA and BeEF - mygg.js (*Norwegian for mosquito*) is a tool to proxy web traffic via cross-site scripting. By abusing session riding, authentication tokens will automatically be appended to each request by the "victim's" browser, enabling the "attacker" to browse as though they were authenticated.
 
 <img src="https://github.com/dsolstad/mygg.js/blob/master/diagram.png" alt="drawing" width="698" height="320"/>
 
