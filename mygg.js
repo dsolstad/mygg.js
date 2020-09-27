@@ -1,6 +1,6 @@
 /* --------- Info --------- */
 
-//  mygg.js v0.3.3
+//  mygg.js v0.3.3.1
 //  Author: Daniel Solstad
 //  Repository: https://github.com/dsolstad/mygg.js
 
@@ -305,7 +305,7 @@ function makeRequest(id, method, url, head, body) {
             responseURL = (target_http.responseURL? target_http.responseURL : url);
 
             /* Checking if the browser got a redirect. */
-            if (stripProt(url) == stripProt(responseURL) {
+            if (stripProt(url) == stripProt(responseURL)) {
                 formData.append('status', target_http.status);
                 formData.append('headers', target_http.getAllResponseHeaders());
                 var blob = new Blob([target_http.response], {type: 'application/octet-stream'});
