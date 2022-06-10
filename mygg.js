@@ -33,6 +33,7 @@ const http = require('http');
 const https = require('https');
 const proxy = require('http');
 const fs = require('fs');
+const util = require('util');
 const Busboy = require('busboy');
 const { spawn } = require('child_process');
 
@@ -97,12 +98,17 @@ proxy.createServer(function (req, res) {
                 var body_length = body.length;
                 var headers = updateContentLength(headers, body_length);
 
-	            console.log("[+] Received status: " + result.status);
-	            if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
-	            if (config.debug) { console.log("[+] Received body:\n" + body); }
-	            console.log("[+] -------------------------------- [+]");
+		        console.log("[+] Received status: " + result.status);
+		        if (config.debug) { console.log("[+] Received headers:\n"); console.log(headers); }
+		        if (config.debug) { console.log("[+] Received body:\n" + body); }
+		        console.log("[+] -------------------------------- [+]");
 
-                res.writeHead(result.status, headers);
+                // Need to convert status code to a valid one.
+				if (result.status == '0') { 
+					res.writeHead(404);
+			    } else {
+		        	res.writeHead(result.status, headers);
+		        }
                 res.end(body);
             };
         });
@@ -136,7 +142,12 @@ proxy.createServer(function (req, res) {
             if (config.debug) { console.log("[+] Received body:\n" + body); }
             console.log("[+] -------------------------------- [+]");
 
-            res.writeHead(result.status, headers);
+            // Need to convert status code to a valid one.
+            if (result.status == '0') { 
+                res.writeHead(404);
+            } else {
+                res.writeHead(result.status, headers);
+            }
             res.end(body);
         };
     }
@@ -181,7 +192,7 @@ http_handler = function(req, res) {
     /* Catching the performed requests from the hooked browser */
     } else if (req.url == '/responses' && req.method == 'POST') {
 
-        var busboy = new Busboy({ headers: req.headers });
+        var busboy = Busboy({ headers: req.headers });
         var response = {};
 
         busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
@@ -197,7 +208,7 @@ http_handler = function(req, res) {
             });
         });
         busboy.on('field', function(fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
-            //console.log('Field [' + fieldname + ']: value: ' + inspect(val));
+            //console.log('Field [' + fieldname + ']: value: ' + util.inspect(val));
             response[fieldname] = val;
         });
         busboy.on('finish', function() {
